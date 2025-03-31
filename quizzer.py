@@ -43,12 +43,51 @@ def display_question(root, question_data, question_index, score, score_label):
             command=submit_answer
         ).pack(pady=10)
 
+    elif question_type == 4:
+        correct_answer = question_data[3]
+
+        for option in ['True', 'False']:
+            tk.Button(
+                root,
+                text=option,
+                command=lambda opt=option: check_answer(opt, correct_answer, root, question_index, score, score_label)
+            ).pack(pady=2)
+
+    elif question_type == 2:
+        correct_answer = question_data[1]
+        entry = tk.Entry(root)
+        entry.pack(pady=5)
+
+        tk.Button(
+            root,
+            text='Submit',
+            command=lambda: check_answer(entry.get(), correct_answer, root, question_index, score, score_label)
+        ).pack(pady=5)
+
 def check_answer(selected_answer, correct_answer, root, question_index, score, score_label):
     if selected_answer.strip().lower() == correct_answer.strip().lower():
         score += 1
+        score_label.config(text=f'Score {score}', fg='green')
+        next_question(root, question_index + 1, score, score_label)
 
-    score_label.config(text=f'Score {score}')
-    next_question(root, question_index + 1, score, score_label)
+    else:
+        for widget in root.winfo_children():
+            if widget != score_label:
+                widget.destroy()
+
+        tk.Label(
+            root,
+            text=f'Incorrect! The correct answer is: {correct_answer}',
+            fg='red',
+            bg='white',
+            font=('Arial', 12),
+        ).pack(pady=10)
+
+        tk.Button(
+            root,
+            text='Next',
+            command=lambda: next_question(root, question_index + 1, score, score_label),
+        ).pack(pady=10)
 
 def next_question(root, question_index, score, score_label):
     if question_index < len(questions):
@@ -62,14 +101,14 @@ def next_question(root, question_index, score, score_label):
             fg='black',
             bg='white',
             font=('Arial', 16),
-            ).pack(pady=10)
+        ).pack(pady=10)
         tk.Label(
             root,
             text=f'Your total score is {score}',
-            fg='black',
+            fg='green',
             bg='white',
             font=('Arial', 16),
-            ).pack(pady=10)
+        ).pack(pady=10)
 
 def main():
     global questions
@@ -81,7 +120,7 @@ def main():
     root.configure(bg='white')
 
     score = 0
-    score_label = tk.Label(root, text=f'Score: {score}', font=('Arial', 16), bg='white')
+    score_label = tk.Label(root, text=f'Score {score}', font=('Arial', 16), bg='white', fg='green')
     score_label.pack(pady=10)
 
     next_question(root, 0, score, score_label)
