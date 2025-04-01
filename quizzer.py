@@ -15,21 +15,28 @@ def load_questions(file_path):
             questions.append(row)
     return questions
 
-def update_timer(root, question_index, score, score_label, timer_label):
+def update_timer(root, score_label, timer_label):
     if time_left > 0:
         time_left -= 1
         timer_label.config(text=f'Time left: {time_left} seconds')
         root.after(1000, update_timer)
     else:
-        delete_all_widgets(root, score_label)
+        delete_all_widgets(root, score_label, timer_label)
+        timer_label.config(text=f"Time's up!")
         tk.Label(root)
 
 def display_question(root, question_data, question_index, score, score_label, **kwargs):
-    if timer:
-        time_left = timer_seconds
-        timer_label = tk.Label(root, text=f'Time left: {time_left}')
+    if enable_timer.get():
+        time_left = 60
+        timer_label = tk.Label(
+            root,
+            text=f'Time left: {time_left}',
+            bg='white',
+            fg='red'
+        ).pack(pady=10)
         update_timer(root, question_index, score, score_label, timer_label)
 
+    selected_answer = tk.StringVar()
     question_type = len(question_data)
     question = question_data[0]
 
@@ -39,51 +46,45 @@ def display_question(root, question_data, question_index, score, score_label, **
         options = question_data[1:5]
         correct_answer = question_data[5]
 
-        selected_option = tk.StringVar(value="")
-
         for option in options:
             tk.Radiobutton(
                 root,
                 text=option,
-                variable=selected_option,
+                variable=selected_answer,
                 value=option,
                 bg='white'
             ).pack(pady=2)
-
-        def submit_answer():
-            check_answer(selected_option.get(), correct_answer, root, question_index, score, score_label)
-
-        tk.Button(
-            root,
-            text='Submit',
-            command=submit_answer
-        ).pack(pady=10)
 
     elif question_type == 4:
         correct_answer = question_data[3]
 
         for option in ['True', 'False']:
-            tk.Button(
+            tk.Radiobutton(
                 root,
                 text=option,
-                command=lambda opt=option: check_answer(opt, correct_answer, root, question_index, score, score_label)
+                variable=selected_answer,
+                value=option,
+                bg='white'
             ).pack(pady=2)
 
     elif question_type == 2:
         correct_answer = question_data[1]
-        entry = tk.Entry(root)
+        entry = tk.Entry(
+            root,
+            textvariable=selected_answer
+        )
         entry.pack(pady=5)
 
-        tk.Button(
-            root,
-            text='Submit',
-            command=lambda: check_answer(entry.get(), correct_answer, root, question_index, score, score_label)
-        ).pack(pady=5)
+    tk.Button(
+        root,
+        text='Submit',
+        command=lambda: check_answer(selected_answer, correct_answer, root, question_index, score, score_label)
+    ).pack(pady=5)
 
 def check_answer(selected_answer, correct_answer, root, question_index, score, score_label):
     delete_all_widgets(root, score_label)
 
-    if selected_answer.strip().lower() == correct_answer.strip().lower():
+    if selected_answer.get().strip().lower() == correct_answer.strip().lower():
         score += 1
         score_label.config(text=f'Score {score}', fg='green')
 
@@ -133,7 +134,7 @@ def next_question(root, question_index, score, score_label):
         ).pack(pady=10)
 
 def main():
-    global questions
+    global questions, enable_timer, selected_answer
 
     file_path = filedialog.askopenfilename(
         title='Select Quiz File',
@@ -171,17 +172,12 @@ def main():
 
     tk.Checkbutton(
         root,
-        text="Enable Timer",
+        text='Enable 1 Minute Timer',
         variable=enable_timer,
         onvalue=True,
         offvalue=False,
-        bg='white'
+        bg='white',
     ).pack(pady=5)
-
-    global timer
-    timer = enable_timer.get()
-    global timer_seconds
-    timer_seconds = 60
 
     def start_quiz():
         score = 0
