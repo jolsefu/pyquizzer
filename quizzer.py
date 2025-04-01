@@ -2,10 +2,16 @@ import tkinter as tk
 from tkinter import filedialog
 import csv
 
+
+
+
+
 def delete_all_widgets(root, *args):
     for widget in root.winfo_children():
         if widget not in args:
             widget.destroy()
+
+
 
 def load_questions(file_path):
     questions = []
@@ -15,36 +21,24 @@ def load_questions(file_path):
             questions.append(row)
     return questions
 
-def update_timer(root, score_label, timer_label):
-    if time_left > 0:
-        time_left -= 1
-        timer_label.config(text=f'Time left: {time_left} seconds')
-        root.after(1000, update_timer)
-    else:
-        delete_all_widgets(root, score_label, timer_label)
-        timer_label.config(text=f"Time's up!")
-        tk.Label(root)
 
-def display_question(root, question_data, question_index, score, score_label, **kwargs):
-    if enable_timer.get():
-        time_left = 60
-        timer_label = tk.Label(
-            root,
-            text=f'Time left: {time_left}',
-            bg='white',
-            fg='red'
-        ).pack(pady=10)
-        update_timer(root, question_index, score, score_label, timer_label)
 
+def display_question(root, question_data, question_index, score, score_label):
     selected_answer = tk.StringVar()
     question_type = len(question_data)
     question = question_data[0]
+
+    if question_type == 6:
+        correct_answer = question_data[5]
+    elif question_type == 4:
+        correct_answer = question_data[3]
+    elif question_type == 2:
+        correct_answer = question_data[1]
 
     tk.Label(root, text=question, bg='white', fg='black', wraplength=400, pady=10).pack()
 
     if question_type == 6:
         options = question_data[1:5]
-        correct_answer = question_data[5]
 
         for option in options:
             tk.Radiobutton(
@@ -56,8 +50,6 @@ def display_question(root, question_data, question_index, score, score_label, **
             ).pack(pady=2)
 
     elif question_type == 4:
-        correct_answer = question_data[3]
-
         for option in ['True', 'False']:
             tk.Radiobutton(
                 root,
@@ -68,18 +60,45 @@ def display_question(root, question_data, question_index, score, score_label, **
             ).pack(pady=2)
 
     elif question_type == 2:
-        correct_answer = question_data[1]
         entry = tk.Entry(
             root,
             textvariable=selected_answer
         )
         entry.pack(pady=5)
 
-    tk.Button(
+    submit_button = tk.Button(
         root,
         text='Submit',
         command=lambda: check_answer(selected_answer, correct_answer, root, question_index, score, score_label)
-    ).pack(pady=5)
+    )
+    submit_button.pack(pady=10)
+
+
+
+
+
+    def update_timer(root, score_label, timer_label, time_left):
+        if time_left > 0:
+            time_left -= 1
+            timer_label.config(text=f'Time left: {time_left} seconds')
+            root.after(1000, update_timer, root, score_label, timer_label, time_left)
+        else:
+            delete_all_widgets(root, score_label, timer_label, submit_button)
+            timer_label.config(text=f"Time's up!")
+
+    if enable_timer.get():
+        time_left = 60
+        timer_label = tk.Label(
+            root,
+            text=f'Time left: {time_left}',
+            bg='white',
+            fg='red'
+        )
+        timer_label.pack(pady=10)
+
+        update_timer(root, score_label, timer_label, time_left)
+
+
 
 def check_answer(selected_answer, correct_answer, root, question_index, score, score_label):
     delete_all_widgets(root, score_label)
@@ -133,8 +152,10 @@ def next_question(root, question_index, score, score_label):
             font=('Arial', 16),
         ).pack(pady=10)
 
+
+
 def main():
-    global questions, enable_timer, selected_answer
+    global questions, enable_timer
 
     file_path = filedialog.askopenfilename(
         title='Select Quiz File',
@@ -189,6 +210,8 @@ def main():
     tk.Button(root, text='Start', command=start_quiz, font=('Arial', 12), bg='blue', fg='white').pack(pady=20)
 
     root.mainloop()
+
+
 
 if __name__ == '__main__':
     main()
