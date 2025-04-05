@@ -24,6 +24,29 @@ def load_questions(file_path):
 
 
 def display_question(root, question_data, question_index, score, score_label):
+    def update_timer(root, score_label, timer_label, time_left):
+        if time_left > 0:
+            time_left -= 1
+            timer_label.config(text=f'Time left: {time_left} seconds')
+            root.after(1000, update_timer, root, score_label, timer_label, time_left)
+        else:
+            check_answer(selected_answer, correct_answer, root, question_index, score, score_label)
+            if timer_label.winfo_exists():
+                timer_label.config(text=f"Time's up!")
+
+    if enable_timer.get():
+        time_left = 5
+        timer_label = tk.Label(
+            root,
+            font=('Arial', 12),
+            text=f'Time left: {time_left}',
+            bg='white',
+            fg='red'
+        )
+        timer_label.pack(pady=10)
+
+        update_timer(root, score_label, timer_label, time_left)
+
     selected_answer = tk.StringVar()
     question_type = len(question_data)
     question = question_data[0]
@@ -72,31 +95,6 @@ def display_question(root, question_data, question_index, score, score_label):
         command=lambda: check_answer(selected_answer, correct_answer, root, question_index, score, score_label)
     )
     submit_button.pack(pady=10)
-
-
-
-
-
-    def update_timer(root, score_label, timer_label, time_left):
-        if time_left > 0:
-            time_left -= 1
-            timer_label.config(text=f'Time left: {time_left} seconds')
-            root.after(1000, update_timer, root, score_label, timer_label, time_left)
-        else:
-            delete_all_widgets(root, score_label, timer_label, submit_button)
-            timer_label.config(text=f"Time's up!")
-
-    if enable_timer.get():
-        time_left = 60
-        timer_label = tk.Label(
-            root,
-            text=f'Time left: {time_left}',
-            bg='white',
-            fg='red'
-        )
-        timer_label.pack(pady=10)
-
-        update_timer(root, score_label, timer_label, time_left)
 
 
 
