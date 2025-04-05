@@ -1,213 +1,237 @@
 import tkinter as tk
+from tkinter import ttk
 from tkinter import filedialog
 import csv
 
 
 
+class QuizzerApp:
+    def __init__(self):
+        self.question_index = 0
+        self.questions = []
+        self.enable_timer = False
+        self.score = 0
+        self.root = None
+        self.score_label = None
+        self.progress_bar = None
 
+    def delete_all_widgets(self, **kwargs):
+        for widget in self.root.winfo_children():
+            if kwargs.get('all', False):
+                widget.destroy()
+            elif widget not in [self.progress_bar, self.score_label]:
+                widget.destroy()
 
-def delete_all_widgets(root, *args):
-    for widget in root.winfo_children():
-        if widget not in args:
-            widget.destroy()
+    def load_questions(self, file_path):
+        questions = []
+        with open(file_path, 'r') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                questions.append(row)
+        return questions
 
+    def display_question(self):
+        def update_timer(timer_label, time_left):
+            if time_left > 0:
+                time_left -= 1
+                timer_label.config(text=f'Time left: {time_left} seconds')
+                self.root.after(1000, update_timer, timer_label, time_left)
+            else:
+                self.check_answer(selected_answer, correct_answer, question_index)
+                if timer_label.winfo_exists():
+                    timer_label.config(text=f"Time's up!")
 
+        if self.enable_timer:
+            time_left = 5
+            timer_label = tk.Label(
+                self.root,
+                font=('Arial', 12),
+                text=f'Time left: {time_left}',
+                bg='white',
+                fg='red'
+            )
+            timer_label.pack(pady=10)
 
-def load_questions(file_path):
-    questions = []
-    with open(file_path, 'r') as file:
-        reader = csv.reader(file)
-        for row in reader:
-            questions.append(row)
-    return questions
+            update_timer(timer_label, time_left)
 
+        question_data = self.questions[self.question_index]
 
+        selected_answer = tk.StringVar()
+        question_type = len(question_data)
+        question = question_data[0]
 
-def display_question(root, question_data, question_index, score, score_label):
-    def update_timer(root, score_label, timer_label, time_left):
-        if time_left > 0:
-            time_left -= 1
-            timer_label.config(text=f'Time left: {time_left} seconds')
-            root.after(1000, update_timer, root, score_label, timer_label, time_left)
+        if question_type == 6:
+            correct_answer = question_data[5]
+        elif question_type == 4:
+            correct_answer = question_data[3]
+        elif question_type == 2:
+            correct_answer = question_data[1]
+
+        tk.Label(self.root, text=question, bg='white', fg='black', wraplength=400, pady=10).pack()
+
+        if question_type == 6:
+            options = question_data[1:5]
+
+            for option in options:
+                tk.Radiobutton(
+                    self.root,
+                    text=option,
+                    variable=selected_answer,
+                    value=option,
+                    bg='white'
+                ).pack(pady=2)
+
+        elif question_type == 4:
+            for option in ['True', 'False']:
+                tk.Radiobutton(
+                    self.root,
+                    text=option,
+                    variable=selected_answer,
+                    value=option,
+                    bg='white'
+                ).pack(pady=2)
+
+        elif question_type == 2:
+            entry = tk.Entry(
+                self.root,
+                textvariable=selected_answer
+            )
+            entry.pack(pady=5)
+
+        submit_button = tk.Button(
+            self.root,
+            text='Submit',
+            command=lambda: self.check_answer(selected_answer, correct_answer)
+        )
+        submit_button.pack(pady=10)
+
+    def check_answer(self, selected_answer, correct_answer):
+        self.delete_all_widgets()
+
+        if selected_answer.get().strip().lower() == correct_answer.strip().lower():
+            self.score += 1
+            self.score_label.config(text=f'Score {self.score}', fg='green')
+
+            tk.Label(
+                self.root,
+                text='Correct!',
+                fg='green',
+                bg='white',
+                font=('Arial', 12)
+            ).pack(pady=10)
         else:
-            check_answer(selected_answer, correct_answer, root, question_index, score, score_label)
-            if timer_label.winfo_exists():
-                timer_label.config(text=f"Time's up!")
+            tk.Label(
+                self.root,
+                text=f'Incorrect! The correct answer is: {correct_answer}',
+                fg='red',
+                bg='white',
+                font=('Arial', 12),
+            ).pack(pady=10)
 
-    if enable_timer.get():
-        time_left = 5
-        timer_label = tk.Label(
-            root,
-            font=('Arial', 12),
-            text=f'Time left: {time_left}',
-            bg='white',
-            fg='red'
+        self.question_index += 1
+
+        tk.Button(
+            self.root,
+            text='Next',
+            command=lambda: self.next_question(),
+        ).pack(pady=10)
+
+    def next_question(self):
+        if self.question_index < len(self.questions):
+            self.delete_all_widgets()
+
+            progress = (self.question_index) / len(self.questions) * 100
+            self.progress_bar['value'] = progress
+            self.display_question()
+        else:
+            self.delete_all_widgets(all=True)
+
+            tk.Label(
+                self.root,
+                text=f'Quiz Completed!',
+                fg='black',
+                bg='white',
+                font=('Arial', 16),
+            ).pack(pady=10)
+
+            tk.Label(
+                self.root,
+                text=f'Your total score is {self.score}',
+                fg='green',
+                bg='white',
+                font=('Arial', 16),
+            ).pack(pady=10)
+
+    def start_quiz(self):
+        self.delete_all_widgets()
+
+        self.score = 0
+        self.score_label = tk.Label(self.root, text=f'Score {self.score}', font=('Arial', 16), bg='white', fg='green')
+        self.score_label.pack(pady=10)
+
+        self.progress_bar = ttk.Progressbar(
+            self.root,
+            orient='horizontal',
+            length=400,
+            mode='determinate'
         )
-        timer_label.pack(pady=10)
+        self.progress_bar.pack(pady=10)
 
-        update_timer(root, score_label, timer_label, time_left)
+        self.next_question()
 
-    selected_answer = tk.StringVar()
-    question_type = len(question_data)
-    question = question_data[0]
-
-    if question_type == 6:
-        correct_answer = question_data[5]
-    elif question_type == 4:
-        correct_answer = question_data[3]
-    elif question_type == 2:
-        correct_answer = question_data[1]
-
-    tk.Label(root, text=question, bg='white', fg='black', wraplength=400, pady=10).pack()
-
-    if question_type == 6:
-        options = question_data[1:5]
-
-        for option in options:
-            tk.Radiobutton(
-                root,
-                text=option,
-                variable=selected_answer,
-                value=option,
-                bg='white'
-            ).pack(pady=2)
-
-    elif question_type == 4:
-        for option in ['True', 'False']:
-            tk.Radiobutton(
-                root,
-                text=option,
-                variable=selected_answer,
-                value=option,
-                bg='white'
-            ).pack(pady=2)
-
-    elif question_type == 2:
-        entry = tk.Entry(
-            root,
-            textvariable=selected_answer
+    def main(self):
+        file_path = filedialog.askopenfilename(
+            title='Select Quiz File',
+            filetypes=[('CSV Files', '*.csv')]
         )
-        entry.pack(pady=5)
 
-    submit_button = tk.Button(
-        root,
-        text='Submit',
-        command=lambda: check_answer(selected_answer, correct_answer, root, question_index, score, score_label)
-    )
-    submit_button.pack(pady=10)
+        if not file_path:
+            print('No file selected. Exiting...')
+            return
 
+        self.questions = self.load_questions(file_path)
 
-
-def check_answer(selected_answer, correct_answer, root, question_index, score, score_label):
-    delete_all_widgets(root, score_label)
-
-    if selected_answer.get().strip().lower() == correct_answer.strip().lower():
-        score += 1
-        score_label.config(text=f'Score {score}', fg='green')
+        self.root = tk.Tk()
+        self.root.title('Quizzer')
+        self.root.geometry('600x500')
+        self.root.configure(bg='white')
 
         tk.Label(
-            root,
-            text='Correct!',
-            fg='green',
+            self.root,
+            text='Welcome to Quizzer!',
+            font=('Arial', 16),
             bg='white',
-            font=('Arial', 12)
+            fg='black'
         ).pack(pady=10)
-    else:
+
         tk.Label(
-            root,
-            text=f'Incorrect! The correct answer is: {correct_answer}',
-            fg='red',
-            bg='white',
+            self.root,
+            text="Select your options and click 'Start' to begin the quiz.",
             font=('Arial', 12),
-        ).pack(pady=10)
-
-    tk.Button(
-        root,
-        text='Next',
-        command=lambda: next_question(root, question_index + 1, score, score_label),
-    ).pack(pady=10)
-
-def next_question(root, question_index, score, score_label):
-    if question_index < len(questions):
-        delete_all_widgets(root, score_label)
-        display_question(root, questions[question_index], question_index, score, score_label)
-    else:
-        delete_all_widgets(root)
-
-        tk.Label(
-            root,
-            text=f'Quiz Completed!',
-            fg='black',
             bg='white',
-            font=('Arial', 16),
-        ).pack(pady=10)
+            fg='black'
+        ).pack(pady=5)
 
-        tk.Label(
-            root,
-            text=f'Your total score is {score}',
-            fg='green',
+        enable_timer_var = tk.BooleanVar(value=False)
+        self.enable_timer = enable_timer_var.get()
+
+        tk.Checkbutton(
+            self.root,
+            text='Enable 1 Minute Timer',
+            variable=enable_timer_var,
+            onvalue=True,
+            offvalue=False,
             bg='white',
-            font=('Arial', 16),
-        ).pack(pady=10)
+            command=lambda: setattr(self, 'enable_timer', enable_timer_var.get())
+        ).pack(pady=5)
 
+        tk.Button(self.root, text='Start', command=self.start_quiz, font=('Arial', 12), bg='blue', fg='white').pack(pady=20)
 
+        self.root.mainloop()
 
 def main():
-    global questions, enable_timer
-
-    file_path = filedialog.askopenfilename(
-        title='Select Quiz File',
-        filetypes=[('CSV Files', '*.csv')]
-    )
-
-    if not file_path:
-        print('No file selected. Exiting...')
-        return
-
-    questions = load_questions(file_path)
-
-    root = tk.Tk()
-    root.title('Quizzer')
-    root.geometry('600x500')
-    root.configure(bg='white')
-
-    tk.Label(
-        root,
-        text='Welcome to Quizzer!',
-        font=('Arial', 16),
-        bg='white',
-        fg='black'
-    ).pack(pady=10)
-
-    tk.Label(
-        root,
-        text="Select your options and click 'Start' to begin the quiz.",
-        font=('Arial', 12),
-        bg='white',
-        fg='black'
-    ).pack(pady=5)
-
-    enable_timer = tk.BooleanVar(value=False)
-
-    tk.Checkbutton(
-        root,
-        text='Enable 1 Minute Timer',
-        variable=enable_timer,
-        onvalue=True,
-        offvalue=False,
-        bg='white',
-    ).pack(pady=5)
-
-    def start_quiz():
-        score = 0
-        score_label = tk.Label(root, text=f'Score {score}', font=('Arial', 16), bg='white', fg='green')
-        score_label.pack(pady=10)
-
-        next_question(root, 0, score, score_label)
-
-    tk.Button(root, text='Start', command=start_quiz, font=('Arial', 12), bg='blue', fg='white').pack(pady=20)
-
-    root.mainloop()
+    app = QuizzerApp()
+    app.main()
 
 
 
