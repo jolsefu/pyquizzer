@@ -106,7 +106,7 @@ class QuizzerApp:
         ).pack(pady=10)
 
     def check_answer(self):
-        if hasattr(self, 'timer_id'):
+        if self.timer_id:
             self.root.after_cancel(self.timer_id)
         self.delete_all_widgets()
 
@@ -215,11 +215,11 @@ class QuizzerApp:
         ).pack(pady=10)
 
         with open('scores.csv', 'r') as file:
-            reader = csv.DictReader(file)
+            reader = csv.reader(file)
+            next(reader) # Skip first row
             for row in reader:
                 tk.Label(
-                    self.root,
-                    text=f"{row['date']} - {row['score']} - {row['quiz_file']}",
+                    text=f'Quiz {row[2]} with a score of {row[1]} on {row[0]}',
                     bg='white',
                     fg='black'
                 ).pack(pady=5)
