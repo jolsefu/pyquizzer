@@ -2,11 +2,13 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 import csv
+import datetime
 
 
 
 class QuizzerApp:
     def __init__(self):
+        self.quiz_file_path = None
         self.question_index = 0
         self.questions = []
         self.enable_timer = False
@@ -22,14 +24,6 @@ class QuizzerApp:
             elif widget not in [self.progress_bar, self.score_label]:
                 widget.destroy()
 
-    def load_questions(self, file_path):
-        questions = []
-        with open(file_path, 'r') as file:
-            reader = csv.reader(file)
-            for row in reader:
-                questions.append(row)
-        return questions
-
     def display_question(self):
         def update_timer(timer_label, time_left):
             if time_left > 0:
@@ -37,7 +31,7 @@ class QuizzerApp:
                 timer_label.config(text=f'Time left: {time_left} seconds')
                 self.root.after(1000, update_timer, timer_label, time_left)
             else:
-                self.check_answer(selected_answer, correct_answer, question_index)
+                self.check_answer(selected_answer, correct_answer)
                 if timer_label.winfo_exists():
                     timer_label.config(text=f"Time's up!")
 
@@ -162,6 +156,18 @@ class QuizzerApp:
                 font=('Arial', 16),
             ).pack(pady=10)
 
+            score_data = {
+                'date': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                'score': self.score,
+                'quiz_file': self.quiz_file_path
+            }
+
+            with open('scores.csv', 'a', newline='') as file:
+                writer = csv.DictWriter(file, fieldnames=['date', 'score', 'quiz_file'])
+                if file.tell() == 0:
+                    writer.writeheader()
+                writer.writerow(score_data)
+
     def start_quiz(self):
         self.delete_all_widgets()
 
@@ -179,31 +185,62 @@ class QuizzerApp:
 
         self.next_question()
 
-    def main(self):
-        file_path = filedialog.askopenfilename(
-            title='Select Quiz File',
-            filetypes=[('CSV Files', '*.csv')]
-        )
+    def load_questions(self, file_path):
+        questions = []
+        with open(file_path, 'r') as file:
+            reader = csv.reader(file)
+            next(reader)
+            for row in reader:
+                questions.append(row)
+        return questions
 
-        if not file_path:
-            print('No file selected. Exiting...')
-            return
-
-        self.questions = self.load_questions(file_path)
-
-        self.root = tk.Tk()
-        self.root.title('Quizzer')
-        self.root.geometry('600x500')
-        self.root.configure(bg='white')
+    def show_scores(self):
+        self.delete_all_widgets()
 
         tk.Label(
             self.root,
-            text='Welcome to Quizzer!',
+            text='Quiz Scores',
             font=('Arial', 16),
             bg='white',
             fg='black'
         ).pack(pady=10)
 
+        with open('scores.csv', 'r') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                tk.Label(
+                    self.root,
+                    text=f"{row['date']} - {row['score']} - {row['quiz_file']}",
+                    bg='white',
+                    fg='black'
+                ).pack(pady=5)
+
+    def load_quiz_file(self):
+        def load_quiz_file(self):
+            file_path = filedialog.askopenfilename(
+                title='Select Quiz File',
+                filetypes=[('CSV Files', '*.csv')]
+            )
+            if file_path:
+                self.delete_all_widgets()
+                with open(file_path, 'r') as file:
+                    first_row = file.readline().strip()
+                    if first_row.lower() == 'quiz':
+                        self.questions = self.load_questions(file_path)
+                        self.quiz_file_path = file_path
+                        self.quiz_settings()
+                    elif first_row.lower() == 'scores':
+                        self.show_scores()
+
+        tk.Button(
+            text='Load Quiz File or Scores',
+            command=lambda: load_quiz_file(self),
+            font=('Arial', 12),
+            bg='blue',
+            fg='white'
+        ).pack(pady=10)
+
+    def quiz_settings(self):
         tk.Label(
             self.root,
             text="Select your options and click 'Start' to begin the quiz.",
@@ -226,6 +263,22 @@ class QuizzerApp:
         ).pack(pady=5)
 
         tk.Button(self.root, text='Start', command=self.start_quiz, font=('Arial', 12), bg='blue', fg='white').pack(pady=20)
+
+    def main(self):
+        self.root = tk.Tk()
+        self.root.title('Quizzer')
+        self.root.geometry('600x500')
+        self.root.configure(bg='white')
+
+        tk.Label(
+            self.root,
+            text='Welcome to Quizzer!',
+            font=('Arial', 16),
+            bg='white',
+            fg='black'
+        ).pack(pady=10)
+
+        self.load_quiz_file()
 
         self.root.mainloop()
 
