@@ -23,37 +23,35 @@ class QuizzerApp:
 
         self.timer_label = None
         self.time_left = 0
+        self.timer_id = None
 
     def delete_all_widgets(self, **kwargs):
         for widget in self.root.winfo_children():
             if kwargs.get('all', False):
                 widget.destroy()
-            elif widget not in [self.progress_bar, self.score_label, self.timer_label]:
+            elif widget not in [self.progress_bar, self.score_label]:
                 widget.destroy()
 
-    def update_timer(self, *args):
+    def update_timer(self):
         if self.time_left > 0:
             self.time_left -= 1
             self.timer_label.config(text=f'Time left: {self.time_left} seconds')
-            self.root.after(1000, self.update_timer)
+            self.timer_id = self.root.after(1000, self.update_timer)
         else:
             self.check_answer()
-            self.timer_label.config(text=f"Time's up!")
-            self.time_left = 5
 
     def display_question(self):
         if self.enable_timer:
             self.time_left = 5
 
-            if self.timer_label is None:
-                self.timer_label = tk.Label(
-                    self.root,
-                    font=('Arial', 12),
-                    text=f'Time left: {self.time_left}',
-                    bg='white',
-                    fg='red'
-                )
-                self.timer_label.pack(pady=10)
+            self.timer_label = tk.Label(
+                self.root,
+                font=('Arial', 12),
+                text=f'Time left: {self.time_left}',
+                bg='white',
+                fg='red'
+            )
+            self.timer_label.pack(pady=10)
 
             self.update_timer()
 
@@ -101,14 +99,15 @@ class QuizzerApp:
             )
             entry.pack(pady=5)
 
-        submit_button = tk.Button(
+        tk.Button(
             self.root,
             text='Submit',
-            command=lambda: self.check_answer(self.selected_answer, self.correct_answer)
-        )
-        submit_button.pack(pady=10)
+            command=lambda: self.check_answer()
+        ).pack(pady=10)
 
     def check_answer(self):
+        if hasattr(self, 'timer_id'):
+            self.root.after_cancel(self.timer_id)
         self.delete_all_widgets()
 
         if self.selected_answer.get().strip().lower() == self.correct_answer.strip().lower():
@@ -169,7 +168,7 @@ class QuizzerApp:
             score_data = {
                 'date': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 'score': self.score,
-                'quiz_file': self.quiz_file_path
+                'quiz_file': self.quiz_file_path.split('/')[-1]
             }
 
             with open('scores.csv', 'a', newline='') as file:
