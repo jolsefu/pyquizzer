@@ -18,6 +18,7 @@ class QuizzerApp:
         self.correct_answer = None
 
         self.score = 0
+        self.total_score = 0
         self.score_label = None
         self.progress_bar = None
 
@@ -131,6 +132,7 @@ class QuizzerApp:
             ).pack(pady=10)
 
         self.question_index += 1
+        self.total_score += 1
 
         tk.Button(
             self.root,
@@ -168,11 +170,12 @@ class QuizzerApp:
             score_data = {
                 'date': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 'score': self.score,
+                'total_score': self.total_score,
                 'quiz_file': self.quiz_file_path.split('/')[-1]
             }
 
             with open('scores.csv', 'a', newline='') as file:
-                writer = csv.DictWriter(file, fieldnames=['date', 'score', 'quiz_file'])
+                writer = csv.DictWriter(file, fieldnames=['date', 'score', 'total_score', 'quiz_file'])
                 if file.tell() == 0:
                     writer.writeheader()
                 writer.writerow(score_data)
@@ -219,7 +222,7 @@ class QuizzerApp:
             next(reader) # Skip first row
             for row in reader:
                 tk.Label(
-                    text=f'Quiz {row[2]} with a score of {row[1]} on {row[0]}',
+                    text=f'Quiz {row[3]} with a score of {row[1]}/{row[2]} on {row[0]}',
                     bg='white',
                     fg='black'
                 ).pack(pady=5)
@@ -256,7 +259,7 @@ class QuizzerApp:
             font=('Arial', 12),
             bg='white',
             fg='black'
-        ).pack(pady=5)
+        ).pack(pady=10)
 
         enable_timer_var = tk.BooleanVar(value=False)
         self.enable_timer = enable_timer_var.get()
