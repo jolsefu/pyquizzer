@@ -1,4 +1,9 @@
 """
+FINAL PROJECT
+CSC 104 - IJ1
+By: Jules Leo M. Reserva
+
+
 QuizzerApp: A Python-based GUI quiz application using Tkinter.
 
 This program allows users to load quiz questions from a CSV file, answer them interactively, and optionally save their scores.
