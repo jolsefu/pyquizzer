@@ -12,6 +12,7 @@ class QuizzerApp:
         self.question_index = 0
         self.questions = []
         self.enable_timer = False
+        self.enable_store_score = False
         self.root = None
 
         self.selected_answer = None
@@ -174,11 +175,12 @@ class QuizzerApp:
                 'quiz_file': self.quiz_file_path.split('/')[-1]
             }
 
-            with open('scores.csv', 'a', newline='') as file:
-                writer = csv.DictWriter(file, fieldnames=['date', 'score', 'total_score', 'quiz_file'])
-                if file.tell() == 0:
-                    writer.writeheader()
-                writer.writerow(score_data)
+            if self.enable_store_score:
+                with open('scores.csv', 'a', newline='') as file:
+                    writer = csv.DictWriter(file, fieldnames=['date', 'score', 'total_score', 'quiz_file'])
+                    if file.tell() == 0:
+                        writer.writeheader()
+                    writer.writerow(score_data)
 
     def start_quiz(self):
         self.delete_all_widgets()
@@ -272,6 +274,19 @@ class QuizzerApp:
             offvalue=False,
             bg='white',
             command=lambda: setattr(self, 'enable_timer', enable_timer_var.get())
+        ).pack(pady=5)
+
+        enable_store_score_var = tk.BooleanVar(value=False)
+        self.enable_store_score = enable_store_score_var.get()
+
+        tk.Checkbutton(
+            self.root,
+            text='Save Scores After Quiz',
+            variable=enable_store_score_var,
+            onvalue=True,
+            offvalue=False,
+            bg='white',
+            command=lambda: setattr(self, 'enable_store_score', enable_store_score_var.get())
         ).pack(pady=5)
 
         tk.Button(self.root, text='Start', command=self.start_quiz, font=('Arial', 12), bg='blue', fg='white').pack(pady=20)
