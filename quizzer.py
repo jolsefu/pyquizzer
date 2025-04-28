@@ -63,6 +63,8 @@ Dependencies:
     - tkinter: For GUI components.
     - csv: For reading and writing quiz and score data.
     - datetime: For timestamping saved scores.
+    - quizzer.csv: To store questions and answers.
+    - scores.csv: To store scores history of certain quiz files.
 
 Example:
     To run the application, execute the script. Load a quiz file, configure settings, and start answering questions.
